@@ -3,7 +3,7 @@ Build:
  * CPU Speed: 240Mhz
  * Optimize: -O2
  * USB Stack: No USB
- * Flash Size: 2MB
+ * Flash Size: 4MB
 
 Some history
  * Version 0.9 initial release
