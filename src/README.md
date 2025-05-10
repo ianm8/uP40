@@ -10,3 +10,6 @@ Some history
  * Version 0.9 2025-05-06 fix tuning direction
  * Version 0.9 2025-05-06 fix TX sideband
  * Version 0.9 2025-05-06 fix auto sideband
+ * Version 0.9 2025-05-10 mute changing mode
+ * Version 0.9 2025-05-10 AGC TX/RX transition
+ * Version 0.9 2025-05-10 mute Mic when RX
