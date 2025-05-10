@@ -24,6 +24,14 @@
  * Version 0.9 2025-05-06 fix tuning direction
  * Version 0.9 2025-05-06 fix TX sideband
  * Version 0.9 2025-05-06 fix auto sideband
+ * Version 0.9 2025-05-10 mute changing mode
+ * Version 0.9 2025-05-10 AGC TX/RX transition
+ * Version 0.9 2025-05-10 mute Mic when RX
+ *
+ * TODO:
+ *  long press, change mode
+ *  reduce CW signal strength
+ *  fix CW TX frequency offset
  *
  * Build:
  *  Board: Pi Pico 2
@@ -382,6 +390,8 @@ void __not_in_flash_func(adc_interrupt_handler)(void)
 
 void init_adc(void)
 {
+  pinMode(PIN_MIC,OUTPUT);
+  digitalWrite(PIN_MIC,LOW);
   adc_init();
   adc_gpio_init(PIN_SIG_I);
   adc_gpio_init(PIN_SIG_Q);
@@ -398,6 +408,8 @@ void init_adc(void)
 
 void __not_in_flash_func(reset_adc_rx)(void)
 {
+  pinMode(PIN_MIC,OUTPUT);
+  digitalWrite(PIN_MIC,LOW);
   irq_set_enabled(ADC_IRQ_FIFO, false);
   adc_run(false);
   adc_fifo_drain();
@@ -413,6 +425,7 @@ void __not_in_flash_func(reset_adc_tx)(void)
   adc_run(false);
   adc_fifo_drain();
   adc_set_round_robin(0b00000000);
+  adc_gpio_init(PIN_MIC);
   adc_select_input(MIC_MUX);
   irq_set_enabled(ADC_IRQ_FIFO, true);
   adc_run(true);
@@ -803,6 +816,7 @@ void __not_in_flash_func(loop1)(void)
       if (radio.mode != new_mode)
       {
         // only update the mode if it has changed
+        DSP::mute();
         radio.mode = new_mode;
         if (new_mode==MODE_LSB || new_mode==MODE_USB)
         {
@@ -841,9 +855,10 @@ void __not_in_flash_func(loop1)(void)
   if (b_PTT || b_PADB)
   {
     bool back_to_receive = false;
+    const float saved_agc = DSP::agc_peak;
     if (radio.mode==MODE_CWL || radio.mode==MODE_CWU)
     {
-      const uint32_t correct4cw_tx = radio.mode==MODE_CWL?+1000u:-1000u;
+      const uint32_t correct4cw_tx = radio.mode==MODE_CWL?-1000u:+1000u;
       const uint64_t f_tx = (radio.frequency+correct4cw_tx)*SI5351_FREQ_MULT;
       const uint64_t p_tx = (radio.frequency+correct4cw_tx)*QUADRATURE_DIVISOR*SI5351_FREQ_MULT;
       si5351.set_freq_manual(f_tx,p_tx,SI5351_CLK0);
@@ -871,6 +886,7 @@ void __not_in_flash_func(loop1)(void)
       digitalWrite(PIN_RXN,LOW);
       digitalWrite(LED_BUILTIN,LOW);
       delay(50);
+      DSP::agc_peak = saved_agc;
     }
   }
 }
