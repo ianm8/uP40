@@ -13,3 +13,7 @@ Some history
  * Version 0.9 2025-05-10 mute changing mode
  * Version 0.9 2025-05-10 AGC TX/RX transition
  * Version 0.9 2025-05-10 mute Mic when RX
+ * Version 0.9 2025-05-14 long press, change mode
+ * Version 0.9 2025-05-14 announce mode change
+ * Version 0.9 2025-05-14 announce step change
+ * Version 0.9 2025-05-14 reduce CW signal strength
