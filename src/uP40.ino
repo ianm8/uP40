@@ -27,11 +27,12 @@
  * Version 0.9 2025-05-10 mute changing mode
  * Version 0.9 2025-05-10 AGC TX/RX transition
  * Version 0.9 2025-05-10 mute Mic when RX
+ * Version 0.9 2025-05-14 long press, change mode
+ * Version 0.9 2025-05-14 announce mode change
+ * Version 0.9 2025-05-14 announce step change
+ * Version 0.9 2025-05-14 reduce CW signal strength
  *
  * TODO:
- *  long press, change mode
- *  reduce CW signal strength
- *  fix CW TX frequency offset
  *
  * Build:
  *  Board: Pi Pico 2
@@ -48,6 +49,7 @@
 #include "dsp.h"
 #include "cw.h"
 #include "vfa.h"
+#include "announce.h"
 #include "hardware/pwm.h"
 #include "hardware/adc.h"
 #include "hardware/vreg.h"
@@ -89,7 +91,7 @@
 #define DEFAULT_BAND       BAND_40M
 #define DEFAULT_MODE       MODE_LSB
 #define DEFAULT_CW_MODE    CW_STRAIGHT
-#define DEFAULT_AUTO_MODE  true
+#define DEFAULT_AUTO_MODE  false
 #define VOLUME_STEP        5u
 #define LONG_PRESS_TIME    1000u
 #define MIN_FREQUENCY      7000000ul
@@ -294,10 +296,10 @@ void setup()
 #endif
 
   // if button pressed at startup
-  // then turn off auto mode
+  // then turn on auto mode
   if (digitalRead(PIN_ENCBUT)==LOW)
   {
-    radio.auto_mode = false;
+    radio.auto_mode = true;
     delay(50);
     while (digitalRead(PIN_ENCBUT)==LOW)
     {
@@ -520,6 +522,10 @@ void __not_in_flash_func(loop)(void)
         {
           rx_value = (rx_value>>4) + VFA::announce();
         }
+        else if (ANNOUNCE::active)
+        {
+          rx_value = (rx_value>>4) + ANNOUNCE::announce();
+        }
         const int32_t dac_audio = constrain(rx_value,-2048l,+2047l)+2048l;
         dac_h = dac_audio >> 6;
         dac_l = dac_audio & 0x3f;
@@ -736,11 +742,17 @@ void __not_in_flash_func(loop1)(void)
       const uint32_t press_time = millis()-button_start_time;
       if (press_time>LONG_PRESS_TIME)
       {
-////
-        // do something with long press
-        // change mode?
-        state = STATE_WAIT_RELEASE;
+        // change mode
         DSP::mute();
+        switch (radio.mode)
+        {
+          case MODE_LSB: radio.mode = MODE_USB; break;
+          case MODE_USB: radio.mode = MODE_CWL; break;
+          case MODE_CWL: radio.mode = MODE_CWU; break;
+          case MODE_CWU: radio.mode = MODE_LSB; break;
+        }
+        ANNOUNCE::setMode(radio.mode);
+        state = STATE_WAIT_RELEASE;
         break;
       }
       switch (rotary)
@@ -757,6 +769,7 @@ void __not_in_flash_func(loop1)(void)
           case 100:  radio.tuning_step = 10;   break;
           case 10:   radio.tuning_step = 1000; break;
         }
+        ANNOUNCE::setStep(radio.tuning_step);
         state = STATE_WAIT_RELEASE;
       }
       break;
@@ -817,6 +830,7 @@ void __not_in_flash_func(loop1)(void)
       {
         // only update the mode if it has changed
         DSP::mute();
+        ANNOUNCE::setMode(new_mode);
         radio.mode = new_mode;
         if (new_mode==MODE_LSB || new_mode==MODE_USB)
         {

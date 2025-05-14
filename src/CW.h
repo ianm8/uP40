@@ -1612,6 +1612,10 @@ namespace CW
 
   static void __not_in_flash_func(process_cw)(const bool keydown,int16_t &out_i,int16_t &out_q)
   {
+    //static const int32_t cw_gain = 100; // 6 watts
+    //static const int32_t cw_gain = 80; // 6 watts
+    static const int32_t cw_gain = 50; // 6 watts
+    static const int32_t set_gain = cw_gain * 1024 / 100;
     volatile static uint32_t phase = 0;
     volatile static uint32_t gaussian_phase = 0;
     volatile static enum cw_state_t
@@ -1642,8 +1646,8 @@ namespace CW
         const int32_t gaussian = gaussian_tab[gaussian_phase];
         const int32_t sig_i = cos_tab[phase];
         const int32_t sig_q = sin_tab[phase];
-        out_i = (sig_i * gaussian) >> 15;
-        out_q = (sig_q * gaussian) >> 15;
+        out_i = (((sig_i * gaussian) >> 15) * set_gain) >> 10;
+        out_q = (((sig_q * gaussian) >> 15) * set_gain) >> 10;
         phase++;
         if (phase>=COS_SIN_TAB)
         {
@@ -1659,8 +1663,10 @@ namespace CW
       case CW_STATE_KEYDOWN:
       {
         // stay here while key down
-        out_i = cos_tab[phase];
-        out_q = sin_tab[phase];
+        const int32_t sig_i = cos_tab[phase];
+        const int32_t sig_q = sin_tab[phase];
+        out_i = (sig_i * set_gain) >> 10;
+        out_q = (sig_q * set_gain) >> 10;
         phase++;
         if (phase>=COS_SIN_TAB)
         {
@@ -1680,8 +1686,8 @@ namespace CW
         const int32_t gaussian = gaussian_tab[gaussian_phase];
         const int32_t sig_i = cos_tab[phase];
         const int32_t sig_q = sin_tab[phase];
-        out_i = (sig_i * gaussian) >> 15;
-        out_q = (sig_q * gaussian) >> 15;
+        out_i = (((sig_i * gaussian) >> 15) * set_gain) >> 10;
+        out_q = (((sig_q * gaussian) >> 15) * set_gain) >> 10;
         phase++;
         if (phase>=COS_SIN_TAB)
         {
