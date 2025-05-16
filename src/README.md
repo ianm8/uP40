@@ -17,3 +17,7 @@ Some history
  * Version 0.9 2025-05-14 announce mode change
  * Version 0.9 2025-05-14 announce step change
  * Version 0.9 2025-05-14 reduce CW signal strength
+ * Version 0.9 2025-05-14 fix CW receive offset
+ * Version 0.9 2025-05-14 fix CW paddle processing
+ * Version 0.9 2025-05-16 fix step change button bounce
+ * Version 1.0 2025-05-16 release version 1.0
