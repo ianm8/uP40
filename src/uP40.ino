@@ -31,6 +31,10 @@
  * Version 0.9 2025-05-14 announce mode change
  * Version 0.9 2025-05-14 announce step change
  * Version 0.9 2025-05-14 reduce CW signal strength
+ * Version 0.9 2025-05-14 fix CW receive offset
+ * Version 0.9 2025-05-14 fix CW paddle processing
+ * Version 0.9 2025-05-16 fix step change button bounce
+ * Version 1.0 2025-05-16 release version 1.0
  *
  * TODO:
  *
@@ -90,7 +94,7 @@
 #define DEFAULT_STEP       1000ul
 #define DEFAULT_BAND       BAND_40M
 #define DEFAULT_MODE       MODE_LSB
-#define DEFAULT_CW_MODE    CW_STRAIGHT
+#define DEFAULT_CW_MODE    CW_PADDLE
 #define DEFAULT_AUTO_MODE  false
 #define VOLUME_STEP        5u
 #define LONG_PRESS_TIME    1000u
@@ -176,6 +180,8 @@ volatile static float adc_value_i = 0;
 volatile static float adc_value_q = 0;
 volatile static bool adc_value_ready = false;
 volatile static bool setup_complete = false;
+volatile static bool dit_latched = false;
+volatile static bool dah_latched = false;
 
 void setup()
 {
@@ -307,6 +313,20 @@ void setup()
     }
     delay(50);
   }
+
+  // if PTT pressed at startup
+  // then enable CW straight key
+  if (digitalRead(PIN_PTT)==LOW)
+  {
+    radio.cw_mode = CW_STRAIGHT;
+    delay(50);
+    while (digitalRead(PIN_PTT)==LOW)
+    {
+      delay(50);
+    }
+    delay(50);
+  }
+
   r.begin();
   init_adc();
   analogWrite(PIN_VOL,radio.volume);
@@ -573,13 +593,33 @@ static void process_ssb_tx(void)
   }
 }
 
-static void cw_delay(const uint32_t ms,const uint32_t level)
+static void cw_dit_delay(const uint32_t ms,const uint32_t level)
 {
+  // delay here for dit and check for dah
   const uint32_t delay_time = millis()+ms;
   analogWrite(PIN_1LED,level);
   while (delay_time>millis())
   {
-    tight_loop_contents();
+    // check for dah
+    if (digitalRead(PIN_PADB)==LOW)
+    {
+      dah_latched = true;
+    }
+  }
+}
+
+static void cw_dah_delay(const uint32_t ms,const uint32_t level)
+{
+  // delay here for dah and check for dit
+  const uint32_t delay_time = millis()+ms;
+  analogWrite(PIN_1LED,level);
+  while (delay_time>millis())
+  {
+    // check for dit
+    if (digitalRead(PIN_PTT)==LOW)
+    {
+      dit_latched = true;
+    }
   }
 }
 
@@ -632,42 +672,26 @@ static void process_key(void)
     // paddle
     for (;;)
     {
-      if (digitalRead(PIN_PTT)==LOW)
+      if (digitalRead(PIN_PTT)==LOW || dit_latched)
       {
         // dit
-        cw_delay(CW_TIME,0u);
+        dit_latched = false;
+        cw_dit_delay(CW_TIME,0u);
         radio.keydown = true;
         digitalWrite(LED_BUILTIN,HIGH);
-        cw_delay(CW_TIME,255u);
+        cw_dit_delay(CW_TIME,255u);
         radio.keydown = false;
         digitalWrite(LED_BUILTIN,LOW);
         cw_timeout = millis() + CW_TIMEOUT;
       }
-      if (digitalRead(PIN_PADB)==LOW)
+      if (digitalRead(PIN_PADB)==LOW || dah_latched)
       {
         // dah
-        cw_delay(CW_TIME,0u);
+        dah_latched = false;
+        cw_dah_delay(CW_TIME,0u);
         radio.keydown = true;
         digitalWrite(LED_BUILTIN,HIGH);
-        cw_delay(CW_TIME*3,255u);
-        radio.keydown = false;
-        digitalWrite(LED_BUILTIN,LOW);
-        cw_timeout = millis() + CW_TIMEOUT;
-      }
-      if (digitalRead(PIN_PTT)==LOW && digitalRead(PIN_PADB)==LOW)
-      {
-        // dit
-        cw_delay(CW_TIME,0u);
-        radio.keydown = true;
-        digitalWrite(LED_BUILTIN,HIGH);
-        cw_delay(CW_TIME,255u);
-        radio.keydown = false;
-        digitalWrite(LED_BUILTIN,LOW);
-        // dah
-        cw_delay(CW_TIME,0u);
-        radio.keydown = true;
-        digitalWrite(LED_BUILTIN,HIGH);
-        cw_delay(CW_TIME*3,255);
+        cw_dah_delay(CW_TIME*3,255u);
         radio.keydown = false;
         digitalWrite(LED_BUILTIN,LOW);
         cw_timeout = millis() + CW_TIMEOUT;
@@ -763,6 +787,11 @@ void __not_in_flash_func(loop1)(void)
       if (digitalRead(PIN_ENCBUT)==HIGH)
       {
         // change step
+        if (press_time<50)
+        {
+          // avoid bounce
+          break;
+        }
         switch (radio.tuning_step)
         {
           case 1000: radio.tuning_step = 100;  break;
@@ -806,8 +835,9 @@ void __not_in_flash_func(loop1)(void)
     // update the frequency
     current_frequency = radio.frequency;
     new_vfa_frequency = radio.frequency / 1000ul;
-    const uint64_t f = current_frequency * SI5351_FREQ_MULT;
-    const uint64_t p = current_frequency * QUADRATURE_DIVISOR * SI5351_FREQ_MULT;
+    const uint32_t correct4cw = radio.mode==MODE_CWL?+CW_SIDETONE:radio.mode==MODE_CWU?-CW_SIDETONE:0u;
+    const uint64_t f = (current_frequency + correct4cw) * SI5351_FREQ_MULT;
+    const uint64_t p = (current_frequency + correct4cw) * QUADRATURE_DIVISOR * SI5351_FREQ_MULT;
     si5351.set_freq_manual(f,p,SI5351_CLK0);
     si5351.set_freq_manual(f,p,SI5351_CLK1);
 

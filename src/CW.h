@@ -1614,7 +1614,9 @@ namespace CW
   {
     //static const int32_t cw_gain = 100; // 6 watts
     //static const int32_t cw_gain = 80; // 6 watts
-    static const int32_t cw_gain = 50; // 6 watts
+    //static const int32_t cw_gain = 50; // 6 watts
+    //static const int32_t cw_gain = 25; // 4 watts
+    static const int32_t cw_gain = 30; // 5 watts
     static const int32_t set_gain = cw_gain * 1024 / 100;
     volatile static uint32_t phase = 0;
     volatile static uint32_t gaussian_phase = 0;
