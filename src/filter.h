@@ -90,6 +90,17 @@ namespace FILTER
     return sum4 / (float)MA_FILTER_LENGTH;
   }
 
+  static const int16_t __not_in_flash_func(dc)(const int16_t in)
+  {
+    static int32_t s = 0;
+    static int32_t x1 = 0;
+    static int16_t y1 = 0;
+    s -= x1;
+    x1 = (int32_t)in << 16;
+    s += x1 - ((int32_t)y1 << 8);
+    return (y1 = s >> 16);
+  }
+
   static float __not_in_flash_func(dcf)(const float in)
   {
     // single pole IIR high-pass filter

@@ -20,7 +20,7 @@
 /*
  * https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
  *
- * Version 0.9 2025-04-07
+ * Version 0.9 2025-04-07 initial release
  * Version 0.9 2025-05-06 fix tuning direction
  * Version 0.9 2025-05-06 fix TX sideband
  * Version 0.9 2025-05-06 fix auto sideband
@@ -35,6 +35,7 @@
  * Version 0.9 2025-05-14 fix CW paddle processing
  * Version 0.9 2025-05-16 fix step change button bounce
  * Version 1.0 2025-05-16 release version 1.0
+ * Version 1.1 2025-05-24 fix mic level indication
  *
  * TODO:
  *
@@ -383,7 +384,7 @@ void __not_in_flash_func(adc_interrupt_handler)(void)
       pwm_set_both_levels(audio_pwm,dac_l,dac_h);
       pwm_set_both_levels(tx_i_pwm,dac_value_i_p,dac_value_i_n);
       pwm_set_both_levels(tx_q_pwm,dac_value_q_p,dac_value_q_n);
-      adc_value = (int16_t)(adc_raw>>4)-2048;
+      adc_value = ((int16_t)(adc_raw>>4))-2048;
       adc_value_ready = true;
       adc_raw = 0;
       counter = 0;
@@ -457,7 +458,6 @@ void __not_in_flash_func(loop)(void)
 {
   // run DSP on core 0
   static bool tx = false;
-  static uint32_t tx_peak_delay = 0;
   if (tx)
   {
     // TX, check if changed to RX
@@ -483,14 +483,7 @@ void __not_in_flash_func(loop)(void)
         dac_value_q_n = 511-tx_q;
         if (radio.mode==MODE_LSB || radio.mode==MODE_USB)
         {
-          if (millis()>tx_peak_delay)
-          {
-            mic_peak_level = DSP::get_mic_peak_level(adc_value);
-          }
-          else
-          {
-            mic_peak_level = 0;
-          }
+          mic_peak_level = DSP::get_mic_peak_level(adc_value);
         }
         else if (radio.mode==MODE_CWL || radio.mode==MODE_CWU)
         {
@@ -522,7 +515,6 @@ void __not_in_flash_func(loop)(void)
     {
       // switch to TX
       reset_adc_tx();
-      tx_peak_delay = millis() + 100u;
       tx = true;
     }
     else
@@ -588,7 +580,7 @@ static void process_ssb_tx(void)
     if (now>tx_LED_update)
     {
       tx_LED_update = now + 50ul;
-      analogWrite(PIN_1LED,mic_peak_level>>3);
+      analogWrite(PIN_1LED,mic_peak_level>>2);
     }
   }
 }

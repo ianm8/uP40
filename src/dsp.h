@@ -139,27 +139,29 @@ namespace DSP
   static const uint32_t __not_in_flash_func(get_mic_peak_level)(const int16_t mic_in)
   {
     static const uint32_t MIC_LEVEL_DECAY_RATE = 50ul;
-    static const uint32_t MIC_LEVEL_HANG_TIME = 500ul;
-    static uint32_t mic_peak_level = 0;
-    static uint32_t mic_level_update = 0;
-    static uint32_t mic_hangtime_update = 0;
+    static const uint32_t MIC_LEVEL_DECAY_VALUE = 50ul;
+    volatile static uint32_t mic_peak_level = 0;
+    volatile static uint32_t mic_level_update = 0;
     const uint32_t now = millis();
-    const uint32_t mic_level = abs(mic_in);
+    const uint32_t mic_level = abs(FILTER::dc(mic_in));
     if (mic_level>mic_peak_level)
     {
       mic_peak_level = mic_level;
       mic_level_update = now + MIC_LEVEL_DECAY_RATE;
-      mic_hangtime_update = now + MIC_LEVEL_HANG_TIME;
     }
     else
     {
-      if (now>mic_hangtime_update)
+      if (now>mic_level_update)
       {
-        if (now>mic_level_update)
+        if (mic_peak_level<MIC_LEVEL_DECAY_VALUE)
         {
-          if (mic_peak_level) mic_peak_level--;
-          mic_level_update = now + MIC_LEVEL_DECAY_RATE;
+          mic_peak_level = 0;
         }
+        else
+        {
+          mic_peak_level -= MIC_LEVEL_DECAY_VALUE;
+        }
+        mic_level_update = now + MIC_LEVEL_DECAY_RATE;
       }
     }
     return mic_peak_level;
