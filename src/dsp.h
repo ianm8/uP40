@@ -169,7 +169,7 @@ namespace DSP
 
   const void __not_in_flash_func(process_mic)(const int16_t s,int16_t &out_i,int16_t &out_q)
   {
-    static const float mic_gain = 4.0f;
+    static const float mic_gain = 2.0f;
     // input is 12 bits
     // convert to float
     // remove Mic DC

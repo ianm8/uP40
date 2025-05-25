@@ -36,6 +36,8 @@
  * Version 0.9 2025-05-16 fix step change button bounce
  * Version 1.0 2025-05-16 release version 1.0
  * Version 1.1 2025-05-24 fix mic level indication
+ * Version 1.2 2025-05-25 remove unnecessary band code
+ * Version 1.3 2025-05-25 adjust mic gain
  *
  * TODO:
  *
@@ -93,7 +95,6 @@
 #define DEFAULT_VOLUME     120u
 #define DEFAULT_FREQUENCY  7100000ul
 #define DEFAULT_STEP       1000ul
-#define DEFAULT_BAND       BAND_40M
 #define DEFAULT_MODE       MODE_LSB
 #define DEFAULT_CW_MODE    CW_PADDLE
 #define DEFAULT_AUTO_MODE  false
@@ -123,14 +124,6 @@
 #elif PIN_MIC == 29U
 #define MIC_MUX 3U
 #endif
-
-enum band_t
-{
-  BAND_80M,
-  BAND_40M,
-  BAND_20M,
-  NUM_BANDS
-};
 
 enum radio_mode_t
 {
