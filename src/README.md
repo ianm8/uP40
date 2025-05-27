@@ -24,3 +24,4 @@ Some history
  * Version 1.1 2025-05-24 fix mic level indication
  * Version 1.2 2025-05-25 remove unnecessary band code
  * Version 1.3 2025-05-25 adjust mic gain
+ * Version 1.4 2025-05-27 direct CW (no phase errors)
