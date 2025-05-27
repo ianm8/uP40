@@ -38,6 +38,7 @@
  * Version 1.1 2025-05-24 fix mic level indication
  * Version 1.2 2025-05-25 remove unnecessary band code
  * Version 1.3 2025-05-25 adjust mic gain
+ * Version 1.4 2025-05-27 direct CW (no phase errors)
  *
  * TODO:
  *
@@ -887,17 +888,7 @@ void __not_in_flash_func(loop1)(void)
     const float saved_agc = DSP::agc_peak;
     if (radio.mode==MODE_CWL || radio.mode==MODE_CWU)
     {
-      const uint32_t correct4cw_tx = radio.mode==MODE_CWL?-1000u:+1000u;
-      const uint64_t f_tx = (radio.frequency+correct4cw_tx)*SI5351_FREQ_MULT;
-      const uint64_t p_tx = (radio.frequency+correct4cw_tx)*QUADRATURE_DIVISOR*SI5351_FREQ_MULT;
-      si5351.set_freq_manual(f_tx,p_tx,SI5351_CLK0);
-      si5351.set_freq_manual(f_tx,p_tx,SI5351_CLK1);
       process_key();
-      const uint32_t correct4cw_rx = radio.mode==MODE_CWL?+CW_SIDETONE:radio.mode==MODE_CWU?-CW_SIDETONE:0u;
-      const uint64_t f_rx = (radio.frequency+correct4cw_rx)*SI5351_FREQ_MULT;
-      const uint64_t p_rx = (radio.frequency+correct4cw_rx)*QUADRATURE_DIVISOR*SI5351_FREQ_MULT;
-      si5351.set_freq_manual(f_rx,p_rx,SI5351_CLK0);
-      si5351.set_freq_manual(f_rx,p_rx,SI5351_CLK1);
       back_to_receive = true;
     }
     else if (b_PTT)

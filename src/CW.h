@@ -6,266 +6,6 @@
 
 namespace CW
 {
-  // 1KHz cos signal @31250Hz
-  static const int16_t __not_in_flash("fast_access_sram") cos_tab[COS_SIN_TAB] =
-  {
-    511,
-    501,
-    470,
-    421,
-    354,
-    274,
-    182,
-    83,
-    -19,
-    -121,
-    -218,
-    -306,
-    -381,
-    -441,
-    -484,
-    -507,
-    -510,
-    -492,
-    -454,
-    -398,
-    -326,
-    -241,
-    -146,
-    -45,
-    58,
-    158,
-    252,
-    336,
-    406,
-    460,
-    495,
-    510,
-    505,
-    480,
-    435,
-    373,
-    295,
-    206,
-    108,
-    6,
-    -96,
-    -194,
-    -285,
-    -364,
-    -428,
-    -475,
-    -503,
-    -511,
-    -498,
-    -465,
-    -413,
-    -345,
-    -263,
-    -170,
-    -70,
-    32,
-    133,
-    229,
-    316,
-    390,
-    448,
-    488,
-    508,
-    508,
-    488,
-    448,
-    390,
-    316,
-    229,
-    133,
-    32,
-    -70,
-    -170,
-    -263,
-    -345,
-    -413,
-    -465,
-    -498,
-    -511,
-    -503,
-    -475,
-    -428,
-    -364,
-    -285,
-    -194,
-    -96,
-    6,
-    108,
-    206,
-    295,
-    373,
-    435,
-    480,
-    505,
-    510,
-    495,
-    460,
-    406,
-    336,
-    252,
-    158,
-    58,
-    -45,
-    -146,
-    -241,
-    -326,
-    -398,
-    -454,
-    -492,
-    -510,
-    -507,
-    -484,
-    -441,
-    -381,
-    -306,
-    -218,
-    -121,
-    -19,
-    83,
-    182,
-    274,
-    354,
-    421,
-    470,
-    501
-  };
-
-  // 1KHz sin signal @31250Hz
-  static const int16_t __not_in_flash("fast_access_sram") sin_tab[COS_SIN_TAB] =
-  {
-    0,
-    102,
-    200,
-    290,
-    368,
-    431,
-    477,
-    504,
-    511,
-    497,
-    462,
-    410,
-    340,
-    257,
-    164,
-    64,
-    -38,
-    -139,
-    -235,
-    -321,
-    -394,
-    -451,
-    -490,
-    -509,
-    -508,
-    -486,
-    -445,
-    -385,
-    -311,
-    -223,
-    -127,
-    -26,
-    77,
-    176,
-    268,
-    350,
-    417,
-    468,
-    499,
-    511,
-    502,
-    473,
-    424,
-    359,
-    279,
-    188,
-    89,
-    -13,
-    -115,
-    -212,
-    -300,
-    -377,
-    -438,
-    -482,
-    -506,
-    -510,
-    -493,
-    -457,
-    -402,
-    -331,
-    -246,
-    -152,
-    -51,
-    51,
-    152,
-    246,
-    331,
-    402,
-    457,
-    493,
-    510,
-    506,
-    482,
-    438,
-    377,
-    300,
-    212,
-    115,
-    13,
-    -89,
-    -188,
-    -279,
-    -359,
-    -424,
-    -473,
-    -502,
-    -511,
-    -499,
-    -468,
-    -417,
-    -350,
-    -268,
-    -176,
-    -77,
-    26,
-    127,
-    223,
-    311,
-    385,
-    445,
-    486,
-    508,
-    509,
-    490,
-    451,
-    394,
-    321,
-    235,
-    139,
-    38,
-    -64,
-    -164,
-    -257,
-    -340,
-    -410,
-    -462,
-    -497,
-    -511,
-    -504,
-    -477,
-    -431,
-    -368,
-    -290,
-    -200,
-    -102
-  };
-
   static const uint16_t __not_in_flash("fast_access_sram") gaussian_tab[312] =
   {
     32767,
@@ -1612,13 +1352,12 @@ namespace CW
 
   static void __not_in_flash_func(process_cw)(const bool keydown,int16_t &out_i,int16_t &out_q)
   {
-    //static const int32_t cw_gain = 100; // 6 watts
-    //static const int32_t cw_gain = 80; // 6 watts
-    //static const int32_t cw_gain = 50; // 6 watts
-    //static const int32_t cw_gain = 25; // 4 watts
-    static const int32_t cw_gain = 30; // 5 watts
+    //static const int32_t cw_gain = 50; // 5 watts
+    //static const int32_t cw_gain = 30; // 4 watts
+    //static const int32_t cw_gain = 20; // 1 watt
+    static const int32_t cw_gain = 30; // 4 watts
     static const int32_t set_gain = cw_gain * 1024 / 100;
-    volatile static uint32_t phase = 0;
+    static const int32_t max_sig = 511;
     volatile static uint32_t gaussian_phase = 0;
     volatile static enum cw_state_t
     {
@@ -1646,15 +1385,7 @@ namespace CW
       {
         // stay here until gaussian done
         const int32_t gaussian = gaussian_tab[gaussian_phase];
-        const int32_t sig_i = cos_tab[phase];
-        const int32_t sig_q = sin_tab[phase];
-        out_i = (((sig_i * gaussian) >> 15) * set_gain) >> 10;
-        out_q = (((sig_q * gaussian) >> 15) * set_gain) >> 10;
-        phase++;
-        if (phase>=COS_SIN_TAB)
-        {
-          phase = 0;
-        }
+        out_i = out_q = (((max_sig * gaussian) >> 15) * set_gain) >> 11;
         gaussian_phase--;
         if (gaussian_phase==0)
         {
@@ -1665,15 +1396,7 @@ namespace CW
       case CW_STATE_KEYDOWN:
       {
         // stay here while key down
-        const int32_t sig_i = cos_tab[phase];
-        const int32_t sig_q = sin_tab[phase];
-        out_i = (sig_i * set_gain) >> 10;
-        out_q = (sig_q * set_gain) >> 10;
-        phase++;
-        if (phase>=COS_SIN_TAB)
-        {
-          phase = 0;
-        }
+        out_i = out_q = (max_sig * set_gain) >> 11;
         if (keydown)
         {
           return;
@@ -1686,15 +1409,7 @@ namespace CW
       {
         // stay here until gaussian done
         const int32_t gaussian = gaussian_tab[gaussian_phase];
-        const int32_t sig_i = cos_tab[phase];
-        const int32_t sig_q = sin_tab[phase];
-        out_i = (((sig_i * gaussian) >> 15) * set_gain) >> 10;
-        out_q = (((sig_q * gaussian) >> 15) * set_gain) >> 10;
-        phase++;
-        if (phase>=COS_SIN_TAB)
-        {
-          phase = 0;
-        }
+        out_i = out_q = (((max_sig * gaussian) >> 15) * set_gain) >> 11;
         gaussian_phase++;
         if (gaussian_phase>=312)
         {
