@@ -1,7 +1,7 @@
 Build:
  * Board: Pi Pico 2
  * CPU Speed: 240Mhz
- * Optimize: -O2
+ * Optimize: -O3
  * USB Stack: No USB
  * Flash Size: 4MB
 
@@ -25,3 +25,4 @@ Some history
  * Version 1.2 2025-05-25 remove unnecessary band code
  * Version 1.3 2025-05-25 adjust mic gain
  * Version 1.4 2025-05-27 direct CW (no phase errors)
+ * Version 1.5 2025-11-23 increase bandwidth improved
