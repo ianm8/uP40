@@ -1420,7 +1420,6 @@ namespace CW
     }
   }
 
-
   static const int16_t __not_in_flash_func(sidetone)(const bool keydown)
   {
     static const uint64_t tone = 700ull;

@@ -111,7 +111,7 @@ namespace DSP
     const float ssb = p45 - n45;
 
     // LPF
-    const float audio = FILTER::lpf_2400(ssb);
+    const float audio = FILTER::lpf_2600(ssb);
 
     // AGC returns 12 bit value
     return agc(audio * 8192.0f);
@@ -173,20 +173,20 @@ namespace DSP
     // input is 12 bits
     // convert to float
     // remove Mic DC
-    // 2400 LPF 
+    // 2600 LPF 
     // phase shift I
     // phase shift Q
     // first order CESSB
     // convert to int
     // output is 10 bits
     const float ac_sig = FILTER::dcf(((float)s)*(1.0f/2048.0f));
-    const float mic_sig = FILTER::lpf_2400f_tx(ac_sig * mic_gain);
+    const float mic_sig = FILTER::lpf_2600f_tx(ac_sig * mic_gain);
     float ii = FILTER::ap1(mic_sig);
     float qq = FILTER::ap2(mic_sig);
     const float mag_raw = sqrtf(ii*ii + qq*qq);
     const float mag_max = fmaxf(mag_raw, 1.0f);
-    ii = FILTER::lpf_2400if_tx(ii / mag_max);
-    qq = FILTER::lpf_2400qf_tx(qq / mag_max);
+    ii = FILTER::lpf_2600if_tx(ii / mag_max);
+    qq = FILTER::lpf_2600qf_tx(qq / mag_max);
     out_i = (int16_t)(ii * 512.0f);
     out_q = (int16_t)(qq * 512.0f);
   }

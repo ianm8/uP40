@@ -39,6 +39,7 @@
  * Version 1.2 2025-05-25 remove unnecessary band code
  * Version 1.3 2025-05-25 adjust mic gain
  * Version 1.4 2025-05-27 direct CW (no phase errors)
+ * Version 1.5 2025-11-23 increase bandwidth improved
  *
  * TODO:
  *
@@ -464,10 +465,10 @@ void __not_in_flash_func(loop)(void)
         int16_t tx_q = 0;
         switch (radio.mode)
         {
-          case MODE_LSB: DSP::process_mic(adc_value,tx_i,tx_q);   break;
-          case MODE_USB: DSP::process_mic(adc_value,tx_q,tx_i);   break;
-          case MODE_CWL: CW::process_cw(radio.keydown,tx_i,tx_q); break;
-          case MODE_CWU: CW::process_cw(radio.keydown,tx_q,tx_i); break;
+          case MODE_LSB: DSP::process_mic(adc_value,tx_i,tx_q);     break;
+          case MODE_USB: DSP::process_mic(adc_value,tx_q,tx_i);     break;
+          case MODE_CWL: CW::process_cw(radio.keydown,tx_i,tx_q);   break;
+          case MODE_CWU: CW::process_cw(radio.keydown,tx_q,tx_i);   break;
         }
         tx_i = constrain(tx_i,-512,+511);
         tx_q = constrain(tx_q,-512,+511);
